@@ -1,4 +1,5 @@
 # CodeBlocks
+*.cbp
 *.depend
 *.layout
 *.build
