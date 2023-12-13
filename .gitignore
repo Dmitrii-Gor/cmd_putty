@@ -1,3 +1,13 @@
+# CodeBlocks
+*.cbp
+*.depend
+*.layout
+*.build
+
+/.objs
+/obj
+/bin
+
 # Prerequisites
 *.d
 
