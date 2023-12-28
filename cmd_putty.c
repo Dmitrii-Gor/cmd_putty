@@ -1,5 +1,4 @@
-#include "tcp_putty.h"
-#include <stdio.h>
+#include "cmd_putty.h"
 #include <string.h>
 
 void receive_messages(struct thread_args *args)
@@ -22,7 +21,31 @@ void receive_messages(struct thread_args *args)
     }
 }
 
-void initialize_server_socket(SOCKET* server_socket)
+
+void send_messages(SOCKET client_socket)
+{
+    char buffer[1024];
+    while (fgets(buffer, sizeof(buffer), stdin) != NULL)
+    {
+        send(client_socket, buffer, strlen(buffer), 0);
+    }
+}
+
+
+void init_win_socket()
+{
+    WSADATA wsaData;
+    WORD version_requested = WVERSION_REQUESTED;
+
+    if (WSAStartup(version_requested, &wsaData) != 0)
+    {
+        fprintf(stderr, "Error initializing Winsock.\n");
+        return 1;
+    }
+}
+
+
+void init_server_socket(SOCKET* server_socket, struct sockaddr_in* server_addr)
 {
     *server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (*server_socket == INVALID_SOCKET)
@@ -31,18 +54,20 @@ void initialize_server_socket(SOCKET* server_socket)
         WSACleanup();
         exit(1);
     }
-}
 
-void bind_server_socket(SOCKET server_socket, struct sockaddr_in* server_addr)
-{
-    if (bind(server_socket, (struct sockaddr*)server_addr, sizeof(*server_addr)) == SOCKET_ERROR)
+    server_addr->sin_family = AF_INET;
+    server_addr->sin_addr.s_addr = INADDR_ANY;
+    server_addr->sin_port = htons(865);
+
+    if (bind(*server_socket, (struct sockaddr*)server_addr, sizeof(*server_addr)) == SOCKET_ERROR)
     {
-        fprintf(stderr, "error link socket.\n");
-        closesocket(server_socket);
+        fprintf(stderr, "error linking the socket.\n");
+        closesocket(*server_socket);
         WSACleanup();
         exit(1);
     }
 }
+
 
 void listen_for_connections(SOCKET server_socket)
 {
@@ -54,6 +79,7 @@ void listen_for_connections(SOCKET server_socket)
         exit(1);
     }
 }
+
 
 SOCKET accept_client_connection(SOCKET server_socket)
 {
@@ -68,7 +94,8 @@ SOCKET accept_client_connection(SOCKET server_socket)
     return client_socket;
 }
 
-void initialize_client_socket(SOCKET* client_socket)
+
+void init_client_socket(SOCKET* client_socket)
 {
     *client_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (*client_socket == INVALID_SOCKET)
@@ -78,6 +105,7 @@ void initialize_client_socket(SOCKET* client_socket)
         exit(1);
     }
 }
+
 
 void connect_to_server(SOCKET client_socket, struct sockaddr_in* server_addr)
 {
